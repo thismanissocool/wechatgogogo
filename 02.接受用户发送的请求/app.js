@@ -2,8 +2,11 @@
  * Created by Administrator on 2018/11/16.
  */
 const express = require('express');
+const sha1 = require('sha1');
+
+const {getUserDataAsync,parseXMLDataAsync,formatMessage} = require('./utils/tools');
+
 const app = express();
-const sha1 = require('sha1')
 /*
  1. 搭建开发者服务器, 使用中间件接受请求
  2. 默认localhost:3000访问本地服务器， 需要一个互联网能够访问的域名地址
@@ -20,21 +23,26 @@ const sha1 = require('sha1')
  - 如果一样，说明消息来自于微信服务器，返回echostr给微信服务器
  - 如果不一样，说明消息不是微信服务器发送过来的，返回error
 
- { signature: '7b670a2240bd487178bd4e2258100e9c1d315f2d',
- echostr: '6918465573110087483',
- timestamp: '1542353163',
- nonce: '1057503018' }
+ { signature: 'bcf0001cd20dd9dd9185c29395cfd2666268d495',
+ echostr: '6894586667406900661',
+ timestamp: '1542366385',
+ nonce: '909429753' }
  */
 
 const configg = {
   appID: 'wx0310981b5f1b2b24',
   appsecret: 'b2413b8a96507969709e61c80cd173c0',
-  token: 'atguiguTest20181116'
+  token: 'atguiguTest520'
 };
 
-app.use((req,res,next) => {
-  console.log(req.query);
+//与微信服务器通信
+app.use(async (req,res,next) => {
+  // console.log(req.query);
+  //解析出微信服务器发送的请求信息
   const {signature, echostr, timestamp, nonce} = req.query;
+
+  // 验证微信服务器有效性
+  // 将参数签名加密的三个参数（timestamp、nonce、token）组合在一起，按照字典序排序
   const {token} = configg;
 
   const arr = [timestamp, nonce, token].sort();
@@ -62,14 +70,43 @@ app.use((req,res,next) => {
     if (signature !== str) {
       res.end('error');
       return;
-    };
+    }
 
-    //用户发送的消息在请求体
+    //用户发送的消息在请求体,需要解析出微信发送的请求体信息(xml数据形式)
+    const xmlData = await getUserDataAsync(req);
+    // console.log(xmlData);
+
+    //将用户发送过来的xml数据转化为json数据
+    const jsData = await parseXMLDataAsync(xmlData);
+    // console.log(jsData);
+
+    //数据格式化
+    const message = formatMessage(jsData);
+    console.log(message);
 
 
+    let content = '你好啊！勇士~~~';
+
+    if (message.Content === '1'){
+      content = '小芳最帅？';
+    }else if (message.Content === '2'){
+      content = '帅不过我东哥！';
+    }else if (message.Content === '3'){
+      content = '我伟哥帅爆炸！！！';
+    }
+
+    let replyMessage = `<xml>
+      <ToUserName><![CDATA[${message.FromUserName}]]></ToUserName>
+      <FromUserName><![CDATA[${message.ToUserName}]]></FromUserName>
+      <CreateTime>${Date.now()}</CreateTime>
+      <MsgType><![CDATA[text]]></MsgType>
+      <Content><![CDATA[${content}]]></Content>
+      </xml>`;
+    console.log(replyMessage);
+    res.send(replyMessage);
+  }else {
+    res.end('error');
   }
-
-
 
 });
 
