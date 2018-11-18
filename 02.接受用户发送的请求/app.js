@@ -6,6 +6,7 @@ const sha1 = require('sha1');
 
 const {getUserDataAsync,parseXMLDataAsync,formatMessage} = require('./utils/tools');
 const template = require('./reply/template');
+const reply = require('./reply/reply');
 
 const app = express();
 /*
@@ -48,7 +49,7 @@ app.use(async (req,res,next) => {
 
   const arr = [timestamp, nonce, token].sort();
 
-  const str = sha1(arr.join( ''));
+  const str = sha1(arr.join(''));
 
   /*
    微信服务器会发送两种类型的消息给开发者
@@ -83,46 +84,14 @@ app.use(async (req,res,next) => {
 
     //数据格式化
     const message = formatMessage(jsData);
+    // console.log(message);
 
     //配置数据对象
-    let options = {
-      toUserName: message.FromUserName,
-      fromUserName: message.ToUserName,
-      createTime: Date.now(),
-      msgType: 'text'
-    };
-
-
-    let content = '你好啊！勇士~~~';
-
-    if (message.Content === '1'){
-      content = '小芳最帅？';
-    }else if (message.Content === '2'){
-      content = '帅不过我东哥！';
-    }else if (message.Content === '3'){
-      content = '我伟哥帅爆炸！！！';
-    }else if (message.Content === '4') {
-      //回复图文消息
-      options.msgType = 'news';
-      options.title = '微信公众号开发~';
-      options.description = 'class0810~';
-      options.picUrl = 'https://ss1.baidu.com/6ONXsjip0QIZ8tyhnq/it/u=199783060,2774173244&fm=58&s=188FA15AB1206D1108400056000040F6&bpow=121&bpoh=75';
-      options.url = 'http://www.atguigu.com';
-    }
-
-    // let replyMessage = `<xml>
-    //   <ToUserName><![CDATA[${message.FromUserName}]]></ToUserName>
-    //   <FromUserName><![CDATA[${message.ToUserName}]]></FromUserName>
-    //   <CreateTime>${Date.now()}</CreateTime>
-    //   <MsgType><![CDATA[text]]></MsgType>
-    //   <Content><![CDATA[${content}]]></Content>
-    //   </xml>`;
-
-    options.content = content;
+    const options = reply(message);
 
     const replyMessage = template(options);
 
-    console.log(replyMessage);
+    // console.log(replyMessage);
     res.send(replyMessage);
   }else {
     res.end('error');
