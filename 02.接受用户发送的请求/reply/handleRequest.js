@@ -4,10 +4,10 @@
 const express = require('express');
 const sha1 = require('sha1');
 
-const {getUserDataAsync,parseXMLDataAsync,formatMessage} = require('./utils/tools');
-const template = require('./reply/template');
-const reply = require('./reply/reply');
-const {token} = require('./configg');
+const {getUserDataAsync,parseXMLDataAsync,formatMessage} = require('../utils/tools');
+const template = require('./template');
+const reply = require('./reply');
+const {token} = require('../configg');
 
 const app = express();
 /*
@@ -32,11 +32,6 @@ const app = express();
  nonce: '909429753' }
  */
 
-const configg = {
-  appID: 'wx0310981b5f1b2b24',
-  appsecret: 'b2413b8a96507969709e61c80cd173c0',
-  token: 'atguiguTest520'
-};
 
 //与微信服务器通信
 app.use(async (req,res,next) => {
