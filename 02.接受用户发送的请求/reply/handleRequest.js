@@ -41,7 +41,7 @@ app.use(async (req,res,next) => {
 
   // 验证微信服务器有效性
   // 将参数签名加密的三个参数（timestamp、nonce、token）组合在一起，按照字典序(sort)排序
-  const {token} = configg;
+  // const {token} = configg;
 
   const arr = [timestamp, nonce, token].sort();
 
