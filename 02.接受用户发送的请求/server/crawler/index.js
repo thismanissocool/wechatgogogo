@@ -10,7 +10,7 @@
  */
 const puppeteer = require ('puppeteer');
 
-(async () => {
+module.exports = async () => {
   //1.打开浏览器
   const browser = await puppeteer.launch({
     headless: false
@@ -37,7 +37,95 @@ const puppeteer = require ('puppeteer');
     }
     return result;
   });
-  console.log(result);
+  // console.log(result);
 
+  let movies = [];
+
+  //开始第二次爬取
+  for (let i = 0; i < result.length; i++) {
+    try {
+      const item = result[i];
+      //跳转到新网页
+      await page.goto(item, {waitUntil: 'load'});
+      //开始爬取数据
+      const data = await page.evaluate(() => {
+        //yugaopian
+        const $video = $('.related-pic-video');
+        if (!$video.length){
+          return null;
+        }
+
+        const href = $video.attr('href');
+        const cover = $video.css('background-image').split('"')[1].split('?')[0];
+
+
+        //biaoti
+        const title = $('[property="v:itemreviewed"]').text();
+        //pingfen
+        const rating = $('[property="v:average"]').text();
+        //haibao
+        const image = $('[propetry="v:image"]').attr('src');
+        //daoyan
+        const director = $('[rel="v:directedBy"]').text();
+
+        //zhuyan
+        let casts = [];
+        const $stars = $('[rel="v:starring"]');
+        const length = $stars.length >3 ? 3 : $stars.length;
+        for (let j = 0; j < length; j++) {
+          casts.push($(($stars)[j]).text());
+        }
+
+        //leixing
+        let genre = [];
+        const $genre = $('[property="v:genre"]');
+        for (let j = 0; j < $genre.length; j++) {
+          genre.push($($($genre)[j]).text());
+        }
+
+        //shangyinshijian
+        const releaseDate = $($('[property="v:initialReleaseDate"]')[0]).text();
+
+        //juqingjianjie
+        const summary = $('[property="v:summary"]').text().trim();
+
+        return {
+          href,
+          cover,
+          title,
+          rating,
+          image,
+          director,
+          casts,
+          genre,
+          releaseDate,
+          summary
+        }
+
+      })
+      if (!data){
+        continue;
+      }
+
+      data.doubanId = item.split('subject/')[1].split('/')[0];
+      movies.push(data);
+    } catch (e){}
+
+  }
+
+
+  //第三次请求数据
+  for (let i = 0; i < movies.length; i++) {
+    let item = movies[i];
+    await page.goto(item.href, {waitUntil: 'load'});
+    const data = await page.evaluate(() => {
+      return $('video>source').attr('src');
+    })
+
+    item.src = data;
+  }
+  console.log(movies);
   await browser.close();
-})();
+
+  return movies;
+}
